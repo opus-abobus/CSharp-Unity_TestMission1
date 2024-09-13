@@ -1,73 +1,73 @@
-﻿using ProjectManagement.Entities;
-using ProjectManagement.Entities.User;
-using ProjectManagement.Services.UserServices;
+﻿using ProjectManagement.Services.UserServices;
+using ProjectManagement.UserOperations;
 
 namespace ProjectManagement
 {
     public class UserContext
     {
-        public string Title { get; set; }
+        private readonly string? _title;
 
-        public List<UserOperation> Operations { get; set; } = new List<UserOperation>();
+        private readonly SessionData _sessionData;
 
-        public Dictionary<int, UserOperation> providedOperations = new Dictionary<int, UserOperation>(); 
+        private Operation[] _operations;
 
-        public ContextInfo? Info { get; set; }
+        private List<Operation> _providedOperations = new List<Operation>();
 
-        public class ContextInfo
+        private PrivilegeService _privilegeService;
+
+        public UserContext(SessionData sessionData, PrivilegeService privilegeService, string? title = null)
         {
-            public User? User { get; set; }
-            public Project? Project { get; set; }
-            public PrivilegeService? PrivilegeService { get; set; }
-
-            public ContextInfo(User? user = null, Project? project = null, PrivilegeService? privelegeService = null)
-            {
-                User = user;
-                Project = project;
-                PrivilegeService = privelegeService;
-            }
+            _sessionData = sessionData;
+            _privilegeService = privilegeService;
+            _title = title;
         }
 
-        public UserContext(List<UserOperation> operations, string title = "", ContextInfo? info = null)
+        public void SetOperations(Operation[] operations)
         {
-            Operations = operations;
-            Title = title;
-            Info = info;
+            _operations = operations;
+        }
+
+        public void HandleContext()
+        {
+            Console.Clear();
+
+            if (!string.IsNullOrEmpty(_title))
+            {
+                HelperFunctions.WriteToConsoleAnchored(_title);
+            }
+
+            if (_sessionData != null)
+            {
+                if (_sessionData.User != null)
+                {
+                    HelperFunctions.WriteToConsoleAnchored("Текущий пользователь: " + _sessionData.User.Login + " (" + _sessionData.User.Role + ")");
+                }
+                if (_sessionData.Project != null)
+                {
+                    HelperFunctions.WriteToConsoleAnchored("Установленный проект: " + _sessionData.Project.Name + " (id: " + _sessionData.Project.Id + ")");
+                }
+            }
 
             ConstructOptions();
-        }
 
-        private void ConstructOptions()
-        {
-            for (int opNum = 1, i = 0; i < Operations.Count; i++)
+            for (int i = 0; i < _providedOperations.Count; i++)
             {
-                if (Operations[i] is PrivelegeOperation)
-                {
-                    if (Info == null)
-                    {
-                        throw new InvalidDataException("В текущем контексте нет каких-либо данных");
-                    }
-                    if (Info.PrivilegeService == null)
-                    {
-                        throw new InvalidDataException("В текущем контексте нет данных о сервисе привилегий");
-                    }
-                    if (Info.User == null)
-                    {
-                        throw new InvalidDataException("В текущем контексте нет данных о пользователе");
-                    }
-
-                    if (!Info.PrivilegeService.GetPrivileges(Info.User.Role).Contains((Operations[i] as PrivelegeOperation).RequiredPrivelege))
-                    {
-                        continue;
-                    }
-                }
-
-                providedOperations.Add(opNum, Operations[i]);
-                ++opNum;
+                Console.WriteLine("#" + (i + 1) + " - " + _providedOperations[i].Text);
             }
         }
 
-        private int GetChosenOption()
+        public Operation? GetOperation(int choice)
+        {
+            if (_providedOperations.Count < choice)
+            {
+                //throw new ArgumentException("Значение номера операции находилось за пределами коллекции");
+                return null;
+            }
+
+            return _providedOperations[choice - 1];
+        }
+
+        public int ChooseOperation()
         {
             int result;
 
@@ -77,7 +77,7 @@ namespace ProjectManagement
 
                 if (int.TryParse(Console.ReadLine(), out result))
                 {
-                    if (providedOperations.ContainsKey(result))
+                    if (_providedOperations.Count >= result)
                     {
                         return result;
                     }
@@ -87,43 +87,36 @@ namespace ProjectManagement
             }
         }
 
-        private void ExecuteOperation(int choice)
+        private void ConstructOptions()
         {
-            if (!providedOperations.ContainsKey(choice))
+            _providedOperations.Clear();
+
+            for (int i = 0; i < _operations.Length; i++)
             {
-                throw new ArgumentException("Значение номера операции находилось за пределами коллекции");
-            }
-
-            providedOperations[choice].Execute();
-        }
-
-        public void ChooseAndExecuteOperation()
-        {
-            ExecuteOperation(GetChosenOption());
-        }
-
-        public void HandleContext()
-        {
-            if (!string.IsNullOrEmpty(Title))
-            {
-                Application.WriteToConsoleAnchored(Title);
-            }
-
-            if (Info != null)
-            {
-                if (Info.User != null)
+                if (_operations[i] is PrivilegeOperation)
                 {
-                    Application.WriteToConsoleAnchored("Текущий пользователь: " + Info.User.Login + " (" + Info.User.Role + ")");
-                }
-                if (Info.Project != null)
-                {
-                    Application.WriteToConsoleAnchored("Установленный проект: " + Info.Project.Name + " (id: " + Info.Project.Id + ")");
-                }
-            }
+                    if (_sessionData.User == null)
+                    {
+                        continue;
+                    }
 
-            foreach (var operation in providedOperations)
-            {
-                Console.WriteLine("#" + operation.Key + " - " + operation.Value.Text);
+                    var privilegeOp = _operations[i] as PrivilegeOperation;
+
+                    if (!_privilegeService.GetPrivileges(_sessionData.User.Role).Contains(privilegeOp.RequiredPrivelege))
+                    {
+                        continue;
+                    }
+
+                    if (_sessionData.Project == null)
+                    {
+                        if (privilegeOp.RequiredPrivelege == Entities.User.Privilege.CanAssignTasks || privilegeOp.RequiredPrivelege == Entities.User.Privilege.CanCreateTasks)
+                        {
+                            continue;
+                        }
+                    }
+                }
+
+                _providedOperations.Add(_operations[i]);
             }
         }
     }
