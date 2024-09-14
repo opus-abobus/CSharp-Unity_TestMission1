@@ -30,8 +30,8 @@ namespace ProjectManagement.UserOperations
             //
             if (User.GetAssignedTasks(_data.User, _taskStorage) == null)
             {
+                Console.Clear();
                 Console.WriteLine("Для Вас отсутствуют задачи. Отдыхайте, пока можете");
-                Thread.Sleep(1500);
                 return NextContext;
             }
             //
@@ -46,16 +46,16 @@ namespace ProjectManagement.UserOperations
             bool parseRes = int.TryParse(enteredProjectId, out int projectId);
             if (!parseRes)
             {
-                Console.WriteLine("Вы указали не число");
                 Console.Clear();
+                Console.WriteLine("Вы указали не число");
                 return null;
             }
 
             selectedProject = Project.GetProject(_projectsStorage, projectId);
             if (selectedProject == null)
             {
-                Console.WriteLine("Неверный id проекта");
                 Console.Clear();
+                Console.WriteLine("Неверный id проекта");
                 return null;
             }
 
@@ -72,8 +72,8 @@ namespace ProjectManagement.UserOperations
             selectedTask = Task.GetTask(_taskStorage, taskId, projectId);
             if (selectedTask == null)
             {
-                Console.WriteLine("Неверный id задачи");
                 Console.Clear();
+                Console.WriteLine("Неверный id задачи");
                 return null;
             }
 
@@ -84,8 +84,8 @@ namespace ProjectManagement.UserOperations
 
             if (string.IsNullOrEmpty(enteredStatus) || !parseRes)
             {
-                Console.WriteLine("Неверно указан статус задачи");
                 Console.Clear();
+                Console.WriteLine("Неверно указан статус задачи");
                 return null;
             }
 

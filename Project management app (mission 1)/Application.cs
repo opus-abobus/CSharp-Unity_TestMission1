@@ -159,6 +159,7 @@ namespace ProjectManagement
                 choosenOperation = _currentContext.GetOperation(choice);
                 if (choosenOperation == null)
                 {
+                    Console.Clear();
                     Console.WriteLine("Неверный выбор. Укажите допустимый номер операции.");
                     continue;
                 }

@@ -29,6 +29,7 @@ namespace ProjectManagement.UserOperations
 
             if (!_taskManagementService.Validate(enteredTitle))
             {
+                Console.Clear();
                 Console.WriteLine("Указанное наименование задачи недопустимо");
                 return null;
             }

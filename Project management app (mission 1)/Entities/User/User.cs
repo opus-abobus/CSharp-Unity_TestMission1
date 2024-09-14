@@ -43,12 +43,14 @@
 
         public static List<Task>? GetAssignedTasks(User user, Storage<Task> storage, int projectId = -1)
         {
-            var tasksData = storage.GetData(x => x.AssignedUser == user) as IEnumerable<Task>;
+            var tasksData = storage.GetData(x => x.AssignedUser != null) as IEnumerable<Task>;
 
             if (!tasksData.Any())
             {
                 return null;
             }
+
+            tasksData = tasksData.Where(x => x.AssignedUser.Login == user.Login);
 
             if (projectId < 0)
             {

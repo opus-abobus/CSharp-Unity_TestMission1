@@ -25,16 +25,14 @@ namespace ProjectManagement.UserOperations
             if (_usersStorage.GetData(x => x.Role == UserRole.Employee).Count == 0)
             {
                 Console.Clear();
-                Console.WriteLine("В системе отсутствуют рядовые сотрудники. Возврат назад...");
-                Thread.Sleep(2000);
+                Console.WriteLine("В системе отсутствуют рядовые сотрудники");
                 return NextContext;
             }
 
             if (_tasksStorage.GetData(x => x.ProjectId == _data.Project.Id).Count == 0)
             {
                 Console.Clear();
-                Console.WriteLine("В системе отсутствуют задачи для указанного проекта. Возврат назад...");
-                Thread.Sleep(2000);
+                Console.WriteLine("В системе отсутствуют задачи для указанного проекта");
                 return NextContext;
             }
 
@@ -44,8 +42,8 @@ namespace ProjectManagement.UserOperations
             var user = User.GetUser(_usersStorage, enteredLogin);
             if (user == null || user.Role != UserRole.Employee)
             {
-                //Console.WriteLine("Неверный логин.");
                 Console.Clear();
+                Console.WriteLine("Неверный логин."); 
                 return null;
             }
 
@@ -56,8 +54,8 @@ namespace ProjectManagement.UserOperations
 
             if (!parseRes)
             {
-                //Console.WriteLine("Неверный id задачи.");
                 Console.Clear();
+                Console.WriteLine("Неверный id задачи.");  
                 return null;
             }
 
@@ -65,8 +63,8 @@ namespace ProjectManagement.UserOperations
 
             if (task == null)
             {
-                //Console.WriteLine("Неверный id задачи.");
                 Console.Clear();
+                Console.WriteLine("Неверный id задачи.");
                 return null;
             }
 
