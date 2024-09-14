@@ -26,7 +26,7 @@ namespace ProjectManagement
         {
             WriteToConsoleAnchored("Список логинов работников:");
 
-            var logins = GetUsersLogins(storage.GetData().FindAll(x => x.Role == UserRole.Employee));
+            var logins = GetUsersLogins(storage.GetData(x => x.Role == UserRole.Employee));
 
             var table = new ConsoleTable("Login");
 
@@ -71,6 +71,11 @@ namespace ProjectManagement
             }
 
             var taskCollection = User.GetAssignedTasks(currentUser, storage);
+            if (taskCollection == null)
+            {
+                return;
+            }
+
             var formattedTaskCollection = new List<Tuple<int, int, string, string, Task.TaskStatus>>(taskCollection.Count);
             foreach (Task task in taskCollection)
             {

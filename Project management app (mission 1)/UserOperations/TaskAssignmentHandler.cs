@@ -1,4 +1,5 @@
-﻿using ProjectManagement.Entities.User;
+﻿using ProjectManagement.Entities;
+using ProjectManagement.Entities.User;
 using Task = ProjectManagement.Entities.Task;
 
 namespace ProjectManagement.UserOperations
@@ -21,25 +22,21 @@ namespace ProjectManagement.UserOperations
 
         public override UserContext? Execute()
         {
-            if (_usersStorage.GetData().FindAll(x => x.Role == UserRole.Employee).Count == 0)
+            if (_usersStorage.GetData(x => x.Role == UserRole.Employee).Count == 0)
             {
                 Console.Clear();
-                Console.WriteLine("В системе отсутствуют рядовые сотрудники. Возврат в главное меню...");
+                Console.WriteLine("В системе отсутствуют рядовые сотрудники. Возврат назад...");
                 Thread.Sleep(2000);
                 return NextContext;
             }
 
-            if (_tasksStorage.GetData().FindAll(x => x.ProjectId == _data.Project.Id).Count == 0)
+            if (_tasksStorage.GetData(x => x.ProjectId == _data.Project.Id).Count == 0)
             {
                 Console.Clear();
-                Console.WriteLine("В системе отсутствуют задачи для указанного проекта. Возврат в главное меню...");
+                Console.WriteLine("В системе отсутствуют задачи для указанного проекта. Возврат назад...");
                 Thread.Sleep(2000);
                 return NextContext;
             }
-
-            // вывод таблиц с задачами (текущего проекта) и обычными сотрудниками
-            HelperFunctions.WriteWorkersLoginTable(_usersStorage);
-            HelperFunctions.WriteTaskTableWithWorkers(_data.Project, _tasksStorage);
 
             Console.Write("Укажите логин работника: ");
             string? enteredLogin = Console.ReadLine();
@@ -47,34 +44,44 @@ namespace ProjectManagement.UserOperations
             var user = User.GetUser(_usersStorage, enteredLogin);
             if (user == null || user.Role != UserRole.Employee)
             {
-                Console.WriteLine("Неверный логин.");
-                return NextContext;
+                //Console.WriteLine("Неверный логин.");
+                Console.Clear();
+                return null;
             }
 
             Console.Write("Укажите id задачи: ");
             string? enteredTaskId = Console.ReadLine();
 
-            if (Int32.TryParse(enteredTaskId, out int result))
-            {
-                var task = Task.GetTask(_tasksStorage, result, _data.Project.Id);
-                if (task != null)
-                {
-                    task.AssignedUser = User.GetUser(_usersStorage, enteredLogin);
-                    _tasksStorage.SaveData(task);
+            bool parseRes = int.TryParse(enteredTaskId, out int result);
 
-                    Console.Clear();
-                }
-                else
-                {
-                    Console.WriteLine("Неверный id задачи.");
-                }
-            }
-            else
+            if (!parseRes)
             {
-                Console.WriteLine("Неверный id задачи.");
+                //Console.WriteLine("Неверный id задачи.");
+                Console.Clear();
+                return null;
             }
+
+            var task = Task.GetTask(_tasksStorage, result, _data.Project.Id);
+
+            if (task == null)
+            {
+                //Console.WriteLine("Неверный id задачи.");
+                Console.Clear();
+                return null;
+            }
+
+            task.AssignedUser = User.GetUser(_usersStorage, enteredLogin);
+            _tasksStorage.SaveData(task);
+
+            Console.Clear();
 
             return NextContext;
+        }
+
+        public static void PrintTables(Project project, Storage<User> userStorage, Storage<Task> taskStorage)
+        {
+            HelperFunctions.WriteWorkersLoginTable(userStorage);
+            HelperFunctions.WriteTaskTableWithWorkers(project, taskStorage);
         }
     }
 }

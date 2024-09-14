@@ -38,6 +38,8 @@ namespace ProjectManagement
 
         private readonly SessionData _sessionData;
 
+        private Dictionary<Type, Operation> _operationsPool;
+
         public Application(ServiceProvider serviceProvider)
         {
             _registerService = serviceProvider.GetService<IRegisterService>();
@@ -60,7 +62,6 @@ namespace ProjectManagement
             SetupUserContexts();
 
             AddManagerUser();
-
             AddProjectExample();
         }
 
@@ -68,7 +69,7 @@ namespace ProjectManagement
         private UserContext _startupMenu, _authorizedMenu;
 
         // menu level 2
-        private UserContext _taskAssignmentMenu, _setProjectMenu, _taskCreationMenu, _taskStatusAlternateMenu;
+        private UserContext _taskAssignmentMenu, _regMenu, _setProjectMenu, _taskCreationMenu, _taskStatusAlternateMenu;
 
         private UserContext _currentContext;
 
@@ -77,44 +78,67 @@ namespace ProjectManagement
             _startupMenu = new UserContext(_sessionData, _privelegeService, "Простая система управления проектами");
             _authorizedMenu = new UserContext(_sessionData, _privelegeService, "Главное меню");
 
-            _taskAssignmentMenu = new UserContext(_sessionData, _privelegeService, "Меню назначения задач");
+            _taskAssignmentMenu = new UserContext(_sessionData, _privelegeService, "Меню назначения задач",
+                () => TaskAssignmentHandler.PrintTables(_sessionData.Project, _usersStorage, _taskStorage));
             _setProjectMenu = new UserContext(_sessionData, _privelegeService, "Меню выбора текущего проекта");
             _taskCreationMenu = new UserContext(_sessionData, _privelegeService, "Меню добавления задач");
-            _taskStatusAlternateMenu = new UserContext(_sessionData, _privelegeService, "Меню настройки статусов задач");
+            _taskStatusAlternateMenu = new UserContext(_sessionData, _privelegeService, "Меню настройки статусов задач", 
+                () => TaskStatusAlternateHandler.PrintTable(_sessionData.User, _taskStorage));
+
+            _regMenu = new UserContext(_sessionData, _privelegeService);
+
+            _operationsPool = new Dictionary<Type, Operation>() {
+                [typeof(LoginHandler)] = new LoginHandler(_authorizedMenu, _sessionData, _authenticateService, _usersStorage, "Выполнить вход в систему"),
+                [typeof(RegisterHandler)] = new RegisterHandler(_regMenu, _registerService, _usersStorage, Privilege.RegisterUsers, "Зарегистрировать сотрудника"),
+                [typeof(LogoutHandler)] = new LogoutHandler(_startupMenu, _sessionData, "Выйти из системы"),
+                [typeof(TaskAssignmentHandler)] = new TaskAssignmentHandler(_taskAssignmentMenu, _sessionData, _usersStorage, _taskStorage, Privilege.AssignTasks, "Назначить задачи"),
+                [typeof(SetProjectHandler)] = new SetProjectHandler(_authorizedMenu, _projectsStorage, _sessionData, Privilege.SetActiveProject, "Указать id текущего проекта"),
+                [typeof(TaskCreationHandler)] = new TaskCreationHandler(_taskCreationMenu, _taskManagementService, _sessionData, _taskStorage, Privilege.CreateTasks, "Создать задачу"),
+                [typeof(TaskStatusAlternateHandler)] = new TaskStatusAlternateHandler(_taskStatusAlternateMenu, _sessionData, _taskStorage, _projectsStorage, _taskLogService, _tasksLogStorage, Privilege.ChangeTaskStatus, "Изменить статус задачи"),
+
+                [typeof(ExitHandler)] = new ExitHandler(null, "Закрыть программу")
+            };
 
             _startupMenu.SetOperations([
-                new LoginHandler(_authorizedMenu, _sessionData, _authenticateService, _usersStorage, "Выполнить вход в систему"),
-                new ExitHandler(null, "Закрыть программу")
+                _operationsPool[typeof(LoginHandler)],
+                _operationsPool[typeof(ExitHandler)]
                 ]);
 
             _authorizedMenu.SetOperations([
-                new RegisterHandler(null, _registerService, _usersStorage, Privilege.CanRegisterUsers, "Зарегистрировать сотрудника"),
-                new SubContextHandler(_taskAssignmentMenu, Privilege.CanAssignTasks, "Меню назначения задач"),
-                new SubContextHandler(_setProjectMenu, Privilege.CanSetActiveProject, "Меню выбора рабочего проекта (требуется для назначения/создания задач)"),
-                new SubContextHandler(_taskCreationMenu, Privilege.CanCreateTasks, "Меню создания задач"),
-                new SubContextHandler(_taskStatusAlternateMenu, Privilege.CanChangeTaskStatus, "Меню изменения статусов задач"),
-                new LogoutHandler(_startupMenu, _sessionData, "Выйти из системы"),
-                new ExitHandler(null, "Закрыть программу")
+                _operationsPool[typeof(RegisterHandler)],
+                new SubContextHandler(_taskAssignmentMenu, Privilege.AssignTasks, "Меню назначения задач"),
+                new SubContextHandler(_setProjectMenu, Privilege.SetActiveProject, "Меню выбора рабочего проекта (требуется для назначения/создания задач)"),
+                new SubContextHandler(_taskCreationMenu, Privilege.CreateTasks, "Меню создания задач"),
+                new SubContextHandler(_taskStatusAlternateMenu, Privilege.ChangeTaskStatus, "Меню изменения статусов задач"),
+                _operationsPool[typeof(LogoutHandler)],
+                _operationsPool[typeof(ExitHandler)]
+                ]);
+
+            var returnOperation = new ReturnBackHandler(_authorizedMenu, "Вернуться назад");
+
+            _regMenu.SetOperations([
+                _operationsPool[typeof(RegisterHandler)],
+                returnOperation
                 ]);
 
             _taskAssignmentMenu.SetOperations([
-                new TaskAssignmentHandler(_taskAssignmentMenu, _sessionData, _usersStorage, _taskStorage, Privilege.CanAssignTasks, "Назначить задачи"),
-                new ReturnBackHandler(_authorizedMenu, "Вернуться назад")
+               _operationsPool[typeof(TaskAssignmentHandler)],
+                returnOperation
                 ]);
 
             _setProjectMenu.SetOperations([
-                new SetProjectHandler(_authorizedMenu, _projectsStorage, _sessionData, Privilege.CanSetActiveProject, "Указать id текущего проекта"),
-                new ReturnBackHandler(_authorizedMenu, "Вернуться назад")
+                _operationsPool[typeof(SetProjectHandler)],
+                returnOperation
                 ]);
 
             _taskCreationMenu.SetOperations([
-                new TaskCreationHandler(null, _taskManagementService, _sessionData, _taskStorage, Privilege.CanCreateTasks, "Создать задачу"),
-                new ReturnBackHandler(_authorizedMenu, "Вернуться назад")
+                _operationsPool[typeof(TaskCreationHandler)],
+                returnOperation
                 ]);
 
             _taskStatusAlternateMenu.SetOperations([
-                new TaskStatusAlternateHandler(null, _sessionData, _taskStorage, _projectsStorage, _taskLogService, _tasksLogStorage, Privilege.CanChangeTaskStatus, "Изменить статус задачи"),
-                new ReturnBackHandler(_authorizedMenu, "Вернуться назад")
+                _operationsPool[typeof(TaskStatusAlternateHandler)],
+                returnOperation
                 ]);
 
             _currentContext = _startupMenu;
@@ -135,11 +159,11 @@ namespace ProjectManagement
                 choosenOperation = _currentContext.GetOperation(choice);
                 if (choosenOperation == null)
                 {
-                    Console.WriteLine("Неверный выбор. Повторите попытку.");
+                    Console.WriteLine("Неверный выбор. Укажите допустимый номер операции.");
                     continue;
                 }
 
-                // мб добавить bool result для повторного выполнения неулачных операция
+                // null - остаться в предыдущем меню; !null - перейти в следующее меню
                 nextContext = choosenOperation.Execute();
 
                 if (nextContext != null)
@@ -155,6 +179,8 @@ namespace ProjectManagement
             {
                 _usersStorage.SaveData(new User("manager", "123", UserRole.Manager));
             }
+            HelperFunctions.WriteToConsoleAnchored("Используйте логин/пароль для входа в качестве управляющего: "
+                + "manager/123");
         }
 
         private void AddProjectExample()
@@ -164,6 +190,8 @@ namespace ProjectManagement
                 var proj = Project.CreateNew(_projectsStorage, "Разработка системы управления проектами");
                 _projectsStorage.SaveData(proj);
             }
+            HelperFunctions.WriteToConsoleAnchored("В систему добавлен первый проект. Если Вы управляющий, " +
+                "Вы можете указать его в качестве текущего после входа в систему.");
         }
     }
 }

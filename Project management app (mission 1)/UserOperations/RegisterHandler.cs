@@ -24,35 +24,35 @@ namespace ProjectManagement.UserOperations
             Console.Write("Введите логин: ");
             enteredLogin = Console.ReadLine();
 
-            if (_regSiervice.Validate(enteredLogin))
+            if (!_regSiervice.Validate(enteredLogin))
             {
-                if (_regSiervice.IsRegistered(enteredLogin, _storage))
-                {
-                    Console.WriteLine("Указанный логин уже зарегистрирован в системе.");
-
-                    return null;
-                }
+                Console.WriteLine("Указанный логин не является допустимым\nВозврат назад...");
+                Thread.Sleep(1500);
+                Console.Clear();
+                return null;
             }
-            else
-            {
-                Console.WriteLine("Указанный логин не является допустимым. Повторите попытку");
 
+            if (_regSiervice.IsRegistered(enteredLogin, _storage))
+            {
+                Console.WriteLine("Указанный логин уже зарегистрирован в системе.\nВозврат назад...");
+                Thread.Sleep(1500);
+                Console.Clear();
                 return null;
             }
 
             Console.Write("Введите пароль: ");
             enteredPassword = Console.ReadLine();
 
-            if (_regSiervice.Validate(enteredPassword))
+            if (!_regSiervice.Validate(enteredPassword))
             {
-                _regSiervice.Register(enteredLogin, enteredPassword, _storage);
-            }
-            else
-            {
-                Console.WriteLine("Указанный пароль не является допустимым. Повторите попытку");
+                Console.WriteLine("Указанный пароль не является допустимым.\nВозврат назад...");
+                Thread.Sleep(1500);
+                Console.Clear();
                 return null;
             }
 
+            _regSiervice.Register(enteredLogin, enteredPassword, _storage);
+            
             return NextContext;
         }
     }

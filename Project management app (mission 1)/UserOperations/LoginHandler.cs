@@ -31,11 +31,7 @@ namespace ProjectManagement.UserOperations
 
             _sessionData.User = _authService.Authenticate(enteredLogin, enteredPassword, _storage, out bool authResult);
 
-            if (authResult)
-            {
-                Console.Clear();
-            }
-            else
+            if (!authResult)
             {
                 Console.WriteLine("\nВозврат в главное меню...");
                 Thread.Sleep(1500);
@@ -43,6 +39,8 @@ namespace ProjectManagement.UserOperations
 
                 return null;
             }
+
+            Console.Clear();
 
             return NextContext;
         }

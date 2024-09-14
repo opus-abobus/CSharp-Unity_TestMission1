@@ -35,7 +35,15 @@ namespace ProjectManagement
             _saveSystem.Save<List<T>>(_data, FileName);
         }
 
-        public List<T> GetData() { return _data; }
+        public List<T> GetData(Predicate<T>? predicate = null) 
+        {
+            if (predicate == null)
+            {
+                return _data;
+            }
+
+            return _data.FindAll(predicate);
+        }
 
         public Storage(string fileName, ISaveSystem saveSystem)
         {

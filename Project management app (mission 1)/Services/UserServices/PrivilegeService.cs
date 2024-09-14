@@ -39,7 +39,7 @@ namespace ProjectManagement.Services.UserServices
                         {
                             SetPrivilegesForRole(role, new List<Privilege>()
                             {
-                                Privilege.CanChangeTaskStatus
+                                Privilege.ChangeTaskStatus
                             });
 
                             break;
@@ -48,7 +48,7 @@ namespace ProjectManagement.Services.UserServices
                         {
                             SetPrivilegesForRole(UserRole.Manager, new List<Privilege>()
                             {
-                                Privilege.CanRegisterUsers, Privilege.CanAssignTasks, Privilege.CanCreateTasks, Privilege.CanSetActiveProject
+                                Privilege.RegisterUsers, Privilege.AssignTasks, Privilege.CreateTasks, Privilege.SetActiveProject
                             });
 
                             break;

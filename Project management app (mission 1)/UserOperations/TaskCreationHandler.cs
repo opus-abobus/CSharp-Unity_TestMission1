@@ -26,17 +26,19 @@ namespace ProjectManagement.UserOperations
 
             Console.Write("Введите название задачи: ");
             enteredTitle = Console.ReadLine();
-            if (_taskManagementService.Validate(enteredTitle))
-            {
-                Console.Write("Укажите описание задачи: ");
-                enteredDescription = Console.ReadLine();
 
-                _taskManagementService.CreateTask(enteredTitle, _data.Project, _taskStorage, enteredDescription);
-            }
-            else
+            if (!_taskManagementService.Validate(enteredTitle))
             {
                 Console.WriteLine("Указанное наименование задачи недопустимо");
+                return null;
             }
+
+            Console.Write("Укажите описание задачи: ");
+            enteredDescription = Console.ReadLine();
+
+            _taskManagementService.CreateTask(enteredTitle, _data.Project, _taskStorage, enteredDescription);
+
+            Console.Clear();
 
             return NextContext;
         }

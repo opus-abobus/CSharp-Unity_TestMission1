@@ -6,6 +6,11 @@
 
         protected UserContext? NextContext { get; set; }
 
+        public void SetNextContext(UserContext? nextContext)
+        {
+            NextContext = nextContext;
+        }
+
         public Operation(UserContext? nextContext, string? text = null)
         {
             NextContext = nextContext;

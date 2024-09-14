@@ -18,7 +18,7 @@
             int id;
             var data = storage.GetData();
 
-            if (data.Count == 0)
+            if (data == null || data.Count == 0)
             {
                 id = 0;
             }
@@ -32,7 +32,7 @@
 
         public static Project? GetProject(Storage<Project> storage, int id)
         {
-            var existingProject = storage.GetData().FirstOrDefault(x => x.Id == id);
+            var existingProject = storage.GetData(x => x.Id == id).FirstOrDefault();
             if (existingProject != null)
             {
                 return existingProject;
@@ -43,18 +43,18 @@
 
         public List<Task>? GetTasks(Storage<Task> storage)
         {
-            return storage.GetData().FindAll(x => x.ProjectId == this.Id);
+            return storage.GetData(x => x.ProjectId == this.Id);
         }
 
         public int GetNumberOfTasks(Storage<Task> storage)
         {
-            var tasksData = storage.GetData().FindAll(x => x.ProjectId == this.Id);
-            if (tasksData != null)
+            var tasksData = storage.GetData(x => x.ProjectId == this.Id);
+            if (tasksData == null || tasksData.Count == 0)
             {
-                return tasksData.Count;
+                return 0;
             }
 
-            return 0;
+            return tasksData.Count;
         }
     }
 }

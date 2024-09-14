@@ -27,124 +27,86 @@ namespace ProjectManagement.UserOperations
 
         public override UserContext? Execute()
         {
-            Console.Clear();
+            //
+            if (User.GetAssignedTasks(_data.User, _taskStorage) == null)
+            {
+                Console.WriteLine("Для Вас отсутствуют задачи. Отдыхайте, пока можете");
+                Thread.Sleep(1500);
+                return NextContext;
+            }
+            //
 
             string? enteredProjectId, enteredTaskId, enteredStatus;
             Task? selectedTask;
+            Project? selectedProject;
 
-            bool hasAssignedTasks = User.GetAssignedTasks(_data.User, _taskStorage) != null;
+            Console.Write("Введите id проекта: ");
+            enteredProjectId = Console.ReadLine();
 
-            while (true)
+            bool parseRes = int.TryParse(enteredProjectId, out int projectId);
+            if (!parseRes)
             {
-                if (hasAssignedTasks)
-                {
-                    HelperFunctions.WriteToConsoleAnchored("Список Ваших задач по всем проектам, " + _data.User.Login + ":");
-                    HelperFunctions.WriteTaskTableAssociatedWithWorker(_data.User, _taskStorage);
-                }
-                else
-                {
-                    Console.WriteLine("Для Вас отсутствуют задачи. Отдыхайте, пока можете");
-                    Thread.Sleep(1500);
-                    return NextContext;
-                }
-
-                Console.WriteLine("#1 - Изменить статус задачи");
-                Console.WriteLine("#2 - Вернуться назад");
-
-                Console.Write("Укажите номер операции: ");
-
-                string choice = Console.ReadLine();
-                switch (choice)
-                {
-                    case "1":
-                        {
-                            Project? selectedProject;
-
-                            while (true)
-                            {
-                                Console.Write("Введите id проекта: ");
-                                enteredProjectId = Console.ReadLine();
-                                if (Int32.TryParse(enteredProjectId, out int result))
-                                {
-                                    selectedProject = Project.GetProject(_projectsStorage, result);
-                                    if (selectedProject != null)
-                                    {
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Неверный id проекта. Повторите попытку");
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Неверный id проекта. Повторите попытку");
-                                }
-                            }
-
-                            while (true)
-                            {
-                                Console.Write("Введите id задачи: ");
-                                enteredTaskId = Console.ReadLine();
-                                if (Int32.TryParse(enteredTaskId, out int result))
-                                {
-                                    selectedTask = Task.GetTask(_taskStorage, result, Int32.Parse(enteredProjectId));
-                                    if (selectedTask != null)
-                                    {
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Неверный id задачи. Повторите попытку");
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Неверный id задачи. Повторите попытку");
-                                }
-                            }
-
-                            while (true)
-                            {
-                                Console.Write("Введите статус задачи (To do/In progress/Done): ");
-                                enteredStatus = Console.ReadLine();
-
-                                Task.TaskStatus newStatus = Task.Parse(enteredStatus, out bool parseResult);
-
-                                if (string.IsNullOrEmpty(enteredStatus) || !parseResult)
-                                {
-                                    Console.WriteLine("Неверно указан статус задачи. Повторите попытку");
-                                    continue;
-                                }
-
-                                if (newStatus != selectedTask.Status)
-                                {
-                                    selectedTask.Status = newStatus;
-                                    _taskStorage.SaveData(selectedTask);
-
-                                    var log = new TaskLog(DateTime.Now, _data.User, selectedTask, selectedProject, selectedTask.Status);
-                                    _logService.Log(log, _taskLogStorage);
-                                }
-
-                                break;
-                            }
-
-                            Console.Clear();
-
-                            break;
-                        }
-                    case "2":
-                        {
-                            return NextContext;
-                        }
-                    default:
-                        {
-                            Console.WriteLine("Неверный выбор.");
-
-                            break;
-                        }
-                }
+                Console.WriteLine("Вы указали не число");
+                Console.Clear();
+                return null;
             }
+
+            selectedProject = Project.GetProject(_projectsStorage, projectId);
+            if (selectedProject == null)
+            {
+                Console.WriteLine("Неверный id проекта");
+                Console.Clear();
+                return null;
+            }
+
+            Console.Write("Введите id задачи: ");
+            enteredTaskId = Console.ReadLine();
+
+            parseRes = int.TryParse(enteredTaskId, out int taskId);
+            if (!parseRes)
+            {
+                Console.WriteLine("Вы указали не число");
+                Console.Clear();
+                return null;
+            }
+            selectedTask = Task.GetTask(_taskStorage, taskId, projectId);
+            if (selectedTask == null)
+            {
+                Console.WriteLine("Неверный id задачи");
+                Console.Clear();
+                return null;
+            }
+
+            Console.Write("Введите статус задачи (To do/In progress/Done): ");
+            enteredStatus = Console.ReadLine();
+
+            Task.TaskStatus newStatus = Task.Parse(enteredStatus, out parseRes);
+
+            if (string.IsNullOrEmpty(enteredStatus) || !parseRes)
+            {
+                Console.WriteLine("Неверно указан статус задачи");
+                Console.Clear();
+                return null;
+            }
+
+            if (newStatus != selectedTask.Status)
+            {
+                selectedTask.Status = newStatus;
+                _taskStorage.SaveData(selectedTask);
+
+                var log = new TaskLog(DateTime.Now, _data.User, selectedTask, selectedProject, selectedTask.Status);
+                _logService.Log(log, _taskLogStorage);
+            }
+
+            Console.Clear();
+
+            return NextContext;
+        }
+
+        public static void PrintTable(User user, Storage<Task> storage)
+        {
+            HelperFunctions.WriteToConsoleAnchored("Список Ваших задач по всем проектам, " + user.Login + ":");
+            HelperFunctions.WriteTaskTableAssociatedWithWorker(user, storage);
         }
     }
 }

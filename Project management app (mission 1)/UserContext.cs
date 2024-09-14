@@ -15,11 +15,14 @@ namespace ProjectManagement
 
         private PrivilegeService _privilegeService;
 
-        public UserContext(SessionData sessionData, PrivilegeService privilegeService, string? title = null)
+        private Action? _initialAction;
+
+        public UserContext(SessionData sessionData, PrivilegeService privilegeService, string? title = null, Action? initialAction = null)
         {
             _sessionData = sessionData;
             _privilegeService = privilegeService;
             _title = title;
+            _initialAction = initialAction;
         }
 
         public void SetOperations(Operation[] operations)
@@ -29,12 +32,12 @@ namespace ProjectManagement
 
         public void HandleContext()
         {
-            Console.Clear();
-
             if (!string.IsNullOrEmpty(_title))
             {
                 HelperFunctions.WriteToConsoleAnchored(_title);
             }
+
+            _initialAction?.Invoke();
 
             if (_sessionData != null)
             {
@@ -58,9 +61,8 @@ namespace ProjectManagement
 
         public Operation? GetOperation(int choice)
         {
-            if (_providedOperations.Count < choice)
+            if (_providedOperations.Count < choice || choice < 0)
             {
-                //throw new ArgumentException("Значение номера операции находилось за пределами коллекции");
                 return null;
             }
 
@@ -69,22 +71,17 @@ namespace ProjectManagement
 
         public int ChooseOperation()
         {
-            int result;
+            Console.Write("Укажите номер операции: ");
 
-            while (true)
+            if (int.TryParse(Console.ReadLine(), out int parseResult))
             {
-                Console.Write("Укажите номер операции: ");
-
-                if (int.TryParse(Console.ReadLine(), out result))
+                if (_providedOperations.Count >= parseResult)
                 {
-                    if (_providedOperations.Count >= result)
-                    {
-                        return result;
-                    }
+                    return parseResult;
                 }
-
-                Console.WriteLine("Неверно указан номер операции. Повторите попытку.");
             }
+
+            return -1;
         }
 
         private void ConstructOptions()
@@ -109,7 +106,7 @@ namespace ProjectManagement
 
                     if (_sessionData.Project == null)
                     {
-                        if (privilegeOp.RequiredPrivelege == Entities.User.Privilege.CanAssignTasks || privilegeOp.RequiredPrivelege == Entities.User.Privilege.CanCreateTasks)
+                        if (privilegeOp.RequiredPrivelege == Entities.User.Privilege.AssignTasks || privilegeOp.RequiredPrivelege == Entities.User.Privilege.CreateTasks)
                         {
                             continue;
                         }

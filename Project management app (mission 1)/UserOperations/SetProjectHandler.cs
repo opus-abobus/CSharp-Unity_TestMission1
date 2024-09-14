@@ -35,21 +35,23 @@ namespace ProjectManagement.UserOperations
 
             Console.Write("Введите id проекта: ");
 
-            if (int.TryParse(Console.ReadLine(), out int value))
-            {
-                if (data.FirstOrDefault(x => x.Id == value) != null)
-                {
-                    _data.Project = data.FirstOrDefault(x => x.Id == value);
-                }
-                else
-                {
-                    Console.WriteLine("Проекта с указанным Id не существует");
-                }
-            }
-            else
+            bool parseRes = int.TryParse(Console.ReadLine(), out int value);
+
+            if (!parseRes)
             {
                 Console.WriteLine("Вы указали не число");
+                return null;
             }
+
+            Project? existingProject = data.FirstOrDefault(x => x.Id == value);
+
+            if (existingProject == null)
+            {
+                Console.WriteLine("Проекта с указанным Id не существует");
+                return null;
+            }
+
+            _data.Project = existingProject;
 
             Console.Clear();
 

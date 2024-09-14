@@ -8,12 +8,11 @@
 
     public enum Privilege
     {
-        CanCreateTasks,
-        CanAssignTasks,
-        CanRegisterUsers,
-        CanChangeTaskStatus,
-
-        CanSetActiveProject
+        CreateTasks,
+        AssignTasks,
+        RegisterUsers,
+        ChangeTaskStatus,
+        SetActiveProject
     }
 
     [Serializable]
@@ -33,43 +32,36 @@
 
         public static User? GetUser(Storage<User> storage, string login)
         {
-            var existingUser = storage.GetData().FirstOrDefault(u => u.Login == login);
+            var existingUser = storage.GetData(u => u.Login == login).FirstOrDefault();
             if (existingUser != null)
             {
-                //Console.WriteLine("Пользователь найден.");
                 return existingUser;
             }
 
-            //Console.WriteLine("Пользователь не был найден.");
             return null;
         }
 
         public static List<Task>? GetAssignedTasks(User user, Storage<Task> storage, int projectId = -1)
         {
-            var tasksData = storage.GetData().Where(x => x.AssignedUser != null);
-            if (tasksData.Any())
-            {
-                tasksData = tasksData.Where(x => x.AssignedUser.Login == user.Login);
-                if (tasksData.Any())
-                {
-                    if (projectId > -1)
-                    {
-                        tasksData = tasksData.Where(x => x.ProjectId == projectId);
-                        if (!tasksData.Any())
-                        {
-                            return null;
-                        }
+            var tasksData = storage.GetData(x => x.AssignedUser == user) as IEnumerable<Task>;
 
-                        return tasksData.ToList();
-                    }
-                    else
-                    {
-                        return tasksData.ToList();
-                    }
-                }
+            if (!tasksData.Any())
+            {
+                return null;
             }
 
-            return null;
+            if (projectId < 0)
+            {
+                return tasksData.ToList();
+            }
+
+            tasksData = tasksData.Where(x => x.ProjectId == projectId);
+            if (!tasksData.Any())
+            {
+                return null;
+            }
+
+            return tasksData.ToList();
         }
     }
 }
