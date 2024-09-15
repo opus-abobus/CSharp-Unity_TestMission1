@@ -1,4 +1,5 @@
 ﻿using ProjectManagement.Entities.User;
+using ProjectManagement.Menu.MenuBuilder.MenuValidation;
 using ProjectManagement.Services;
 
 namespace ProjectManagement.Menu.MenuBuilder
@@ -13,68 +14,80 @@ namespace ProjectManagement.Menu.MenuBuilder
 
         private List<Privilege>? _requiredPrivileges;
 
-        private Func<bool>? _requiredOperation;
+        private IMenuValidation? _validation;
 
-        private SessionContext? _context;
+        public Action? StartAction { get; private set; }
+        public Action? PostAction { get; private set; }
+
+        public MenuItem? NextMenu { get; private set; }
+        public ClearConsoleOptions? ClearOptions { get; private set; }
+
+        private SessionContext _context;
 
         public List<MenuItem>? GetChildren()
         {
             return _subMenu;
         }
 
-        private MenuItem() { }
-
-        public bool IsCommandAvailable()
+        private MenuItem(SessionContext context) 
         {
-            if (_requiredOperation == null)
-            {
-                if (_requiredPrivileges == null || _requiredPrivileges.Count == 0)
-                {
-                    return true;
-                }
-
-                return HasContextRequiredPrivileges();
-            }
-
-            return _requiredOperation.Invoke();
+            _context = context;
         }
 
-        private bool HasContextRequiredPrivileges()
+        public void CheckAvailability(out RequirementsCheckResult result)
         {
-            if (_context == null || _context.User == null)
+            result = new RequirementsCheckResult();
+
+            result.menuValidationResult = _validation == null ? 
+                new MenuValidationResult(true) : _validation.Execute();
+
+            result.privilegesCheckResult = CheckRequiredPrivileges();
+        }
+
+        private RequiredPrivilegesCheckResult CheckRequiredPrivileges()
+        {
+            if (_requiredPrivileges == null || _requiredPrivileges.Count == 0)
             {
-                return false;
+                return new RequiredPrivilegesCheckResult(true);
+            }
+
+            if (_context.User == null)
+            {
+                return new RequiredPrivilegesCheckResult(false, message: "Не определен текущий пользователь");
             }
 
             var providedPrivileges = PrivilegeManager.GetInstance().GetPrivileges(_context.User.Role);
+            List<Privilege> missedPrivileges = new();
+
             foreach (var reqired in _requiredPrivileges)
             {
                 if (!providedPrivileges.Contains(reqired))
                 {
-                    return false;
+                    missedPrivileges.Add(reqired);
                 }
+            }
+
+            return missedPrivileges.Count == 0 ?
+                new RequiredPrivilegesCheckResult(true) : new RequiredPrivilegesCheckResult(false, missedPrivileges);
+        }
+
+        public bool HasSubMenuItems()
+        {
+            if (_subMenu == null || _subMenu.Count == 0)
+            {
+                return false;
             }
 
             return true;
         }
 
-        public bool IsBoundary()
-        {
-            if (_subMenu == null || _subMenu.Count == 0)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
         public class Builder
         {
-            private MenuItem _menuItem;
+            private readonly MenuItem _menuItem;
 
-            public Builder()
+            public Builder(SessionContext context)
             {
-                _menuItem = new MenuItem();
+                _menuItem = new MenuItem(context);
             }
 
             public Builder WithTitle(string title)
@@ -89,27 +102,61 @@ namespace ProjectManagement.Menu.MenuBuilder
                 return this;
             }
 
-            public Builder WithSubMenu(List<MenuItem> subMenu)
-            {
-                _menuItem._subMenu = subMenu;
-                return this;
-            }
-
             public Builder WithRequiredPrivileges(List<Privilege> requiredPrivileges)
             {
                 _menuItem._requiredPrivileges = requiredPrivileges;
                 return this;
             }
 
-            public Builder WithRequiredOperation(Func<bool> operation)
+            public Builder WithValidation(IMenuValidation validation)
             {
-                _menuItem._requiredOperation = operation;
+                _menuItem._validation = validation;
                 return this;
             }
 
-            public Builder WithSessionContext(SessionContext context)
+            public Builder WithNextMenu(Builder nextItemBuilder)
             {
-                _menuItem._context = context;
+                _menuItem.NextMenu = nextItemBuilder._menuItem;
+                return this;
+            }
+
+            public Builder AddSubMenu(Builder subMenuBuilder)
+            {
+                if (_menuItem._subMenu == null)
+                {
+                    _menuItem._subMenu = [subMenuBuilder._menuItem];
+                    return this;
+                }
+
+                _menuItem._subMenu.Add(subMenuBuilder.Build());
+                return this;
+            }
+
+            public Builder WithSubMenu(List<Builder> subMenuBuilders)
+            {
+                _menuItem._subMenu = new();
+                foreach (var builder in subMenuBuilders)
+                {
+                    _menuItem._subMenu.Add(builder.Build());
+                }
+                return this;
+            }
+
+            public Builder WithStartAction(Action action)
+            {
+                _menuItem.StartAction = action;
+                return this;
+            }
+
+            public Builder WithPostAction(Action action)
+            {
+                _menuItem.PostAction = action;
+                return this;
+            }
+
+            public Builder WithClearOptions(ClearConsoleOptions clearOptions)
+            {
+                _menuItem.ClearOptions = clearOptions;
                 return this;
             }
 

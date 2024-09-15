@@ -1,4 +1,5 @@
 ﻿using ProjectManagement.Entities.User;
+using ProjectManagement.Menu.MenuBuilder.MenuValidation;
 using ProjectManagement.Menu.Operations;
 using Builder = ProjectManagement.Menu.MenuBuilder.MenuItem.Builder;
 
@@ -7,7 +8,6 @@ namespace ProjectManagement.Menu.MenuBuilder
     public class MenuBuilder
     {
         private readonly SessionContext _context;
-
         public MenuBuilder(SessionContext context)
         {
             _context = context;
@@ -16,100 +16,148 @@ namespace ProjectManagement.Menu.MenuBuilder
         // returns start menu
         public MenuItem BuildUserMenu()
         {
-            var exit = new Builder()
+            var authorizedMenu = BuildAuthorizedMenu();
+
+            var loginMenu = BuildLoginMenu(authorizedMenu);
+
+            var exitItem = new Builder(_context)
                 .WithTitle("Закрыть программу")
-                .WithOperation(new ExitOperation())
-                .Build();
+                .WithOperation(new ExitOperation());
 
-            var @return = new Builder()
+            var logout = new Builder(_context)
+                .WithTitle("Выход из системы")
+                .WithOperation(new LogoutOperation(_context))
+                .WithNextMenu(loginMenu);
+
+            authorizedMenu.AddSubMenu(logout);
+            authorizedMenu.AddSubMenu(exitItem);
+
+            return loginMenu.Build();
+        }
+
+        private Builder BuildChooseProjectMenu(Builder previousMenu)
+        {
+            var @return = new Builder(_context)
                 .WithTitle("Вернуться назад")
-                .WithOperation(new ReturnOperation())
-                .Build();
+                .WithNextMenu(previousMenu);
 
-            var login = new Builder()
-                .WithTitle("Выполнить вход в систему")
-                .WithOperation(new LoginOperation(_context))
-                .Build();
+            var chooseProjectMenu = new Builder(_context)
+                .WithTitle("Выбор текущего проекта")
+                .WithValidation(new ChooseProjectValidation(_context))
+                .WithRequiredPrivileges([Privilege.SetActiveProject]);
 
-            var chooseProj = new Builder()
+            var chooseProj = new Builder(_context)
                 .WithTitle("Установить текущий проект")
                 .WithOperation(new ChooseProjectOperation(_context))
                 .WithRequiredPrivileges([Privilege.SetActiveProject])
-                .Build();
+                .WithValidation(new ChooseProjectValidation(_context))
+                .WithNextMenu(previousMenu);
 
-            var logout = new Builder()
-                .WithTitle("Выход из системы")
-                .WithOperation(new LogoutOperation(_context))
-                .Build();
+            chooseProjectMenu.AddSubMenu(chooseProj);
+            chooseProjectMenu.AddSubMenu(@return);
 
-            var reg = new Builder()
+            return chooseProj;
+        }
+
+        private Builder BuildAuthorizedMenu()
+        {
+            var authorizedMenu = new Builder(_context)
+                .WithTitle("Главное меню");
+
+            var reg = new Builder(_context)
                 .WithTitle("Зарегистрировать сотрудника")
                 .WithOperation(new RegisterOperation(_context))
-                .WithRequiredPrivileges([Privilege.RegisterUsers])
-                .Build();
+                .WithRequiredPrivileges([Privilege.RegisterUsers]);
 
-            var taskAssignment = new Builder()
+            var createTask = new Builder(_context)
+                .WithTitle("Создать задачу")
+                .WithOperation(new CreateTaskOperation(_context))
+                .WithRequiredPrivileges([Privilege.CreateTasks])
+                .WithValidation(new CreateTaskValidation(_context));
+
+            var taskStatusAltMenu = BuildTaskStatusAlternateMenu(authorizedMenu);
+            var taskAssignmentMenu = BuildTaskAssignmentMenu(authorizedMenu);
+            var chooseProjectMenu = BuildChooseProjectMenu(authorizedMenu);
+
+            authorizedMenu.WithSubMenu([taskStatusAltMenu, reg, createTask, taskAssignmentMenu, chooseProjectMenu]);
+
+            return authorizedMenu;
+        }
+
+        private Builder BuildTaskStatusAlternateMenu(Builder previousMenu)
+        {
+            var taskStatusAlt = new Builder(_context)
+                .WithTitle("Изменить статус задачи")
+                .WithOperation(new TaskStatusAlternateOperation(_context))
+                .WithRequiredPrivileges([Privilege.ChangeTaskStatus])
+                .WithValidation(new TaskStatusAlternateValidation(_context))
+                .WithStartAction(TaskStatusAlternateAction);
+
+            var @return = new Builder(_context)
+                .WithTitle("Вернуться назад")
+                .WithNextMenu(previousMenu);
+
+            var taskStatusAltMenu = new Builder(_context)
+                .WithTitle("Меню редактирования статусов задач")
+                .WithRequiredPrivileges([Privilege.ChangeTaskStatus])
+                .WithSubMenu([taskStatusAlt, @return])
+                .WithValidation(new TaskStatusAlternateValidation(_context))
+                .WithStartAction(TaskStatusAlternateAction);
+
+            return taskStatusAltMenu;
+        }
+
+        private Builder BuildTaskAssignmentMenu(Builder previousMenu)
+        {
+            var taskAssignment = new Builder(_context)
                 .WithTitle("Назначить задачи")
                 .WithOperation(new TaskAssignmentOperation(_context))
-                .WithSubMenu([])
-                .WithRequiredOperation(TaskAssignmentRequiredOperation)
+                .WithValidation(new TaskAssignmentValidation(_context))
                 .WithRequiredPrivileges([Privilege.AssignTasks])
-                .Build();
+                .WithPostAction(TaskAssignmentStartAction);
 
-            var loginMenu = new Builder()
-                .WithSubMenu([login, exit])
-                .Build();
+            var @return = new Builder(_context)
+                .WithTitle("Вернуться назад")
+                .WithNextMenu(previousMenu);
 
-            var authorizedMenu = new Builder()
-                .WithSubMenu([reg, chooseProj, logout, exit])
-                .Build();
+            var taskAssignmentMenu = new Builder(_context)
+                .WithTitle("Меню назначения задач")
+                .WithValidation(new TaskAssignmentValidation(_context))
+                .WithRequiredPrivileges([Privilege.AssignTasks])
+                .WithSubMenu([taskAssignment, @return])
+                .WithStartAction(TaskAssignmentStartAction);
+
+            return taskAssignmentMenu;
+        }
+
+        private Builder BuildLoginMenu(Builder previousMenu)
+        {
+            var exit = new Builder(_context)
+                .WithTitle("Закрыть программу")
+                .WithOperation(new ExitOperation());
+
+            var login = new Builder(_context)
+                .WithTitle("Выполнить вход в систему")
+                .WithOperation(new LoginOperation(_context))
+                .WithNextMenu(previousMenu);
+
+            var loginMenu = new Builder(_context)
+                .WithTitle("Вход в систему")
+                .WithSubMenu([login, exit]);
 
             return loginMenu;
         }
 
-        private bool TaskAssignmentRequiredOperation()
+        private void TaskAssignmentStartAction()
         {
-            if (_context.Project == null)
-            {
-                Console.WriteLine("Не задан рабочий проект");
-
-                return false;
-            }
-
-            if (!_context.TaskStorage.HasProjectAnyTasks(_context.Project.Id))
-            {
-                Console.WriteLine("В системе отсутствуют задачи для указанного проекта");
-
-                return false;
-            }
-
-            if (!_context.UserStorage.HasEmployees())
-            {
-                Console.WriteLine("В системе отсутствуют рядовые сотрудники");
-
-                return false;
-            }
-
-            HelperFunctions.WriteWorkersLoginTable(_context.UserStorage);
-            HelperFunctions.WriteTaskTableWithWorkers(_context.Project, _context.TaskStorage);
-
-            return true;
+            ConsoleOutputHelper.WriteWorkersLoginTable(_context.UserStorage);
+            ConsoleOutputHelper.WriteTaskTableWithWorkers(_context.Project, _context.TaskStorage);
         }
 
-        private bool TaskStatusAlternateRequiredOperation()
+        private void TaskStatusAlternateAction()
         {
-            if (_context.TaskStorage.GetAssignedTasks(_context.User) == null)
-            {
-                //Console.Clear();
-                Console.WriteLine("Для Вас отсутствуют задачи. Отдыхайте, пока можете");
-
-                return false;
-            }
-
-            HelperFunctions.WriteToConsoleAnchored("Список Ваших задач по всем проектам, " + _context.User.Login + ":");
-            HelperFunctions.WriteTaskTableAssociatedWithWorker(_context.User, _context.TaskStorage);
-
-            return true;
+            ConsoleOutputHelper.WriteToConsoleAnchored("Список Ваших задач по всем проектам, " + _context.User.Login + ":");
+            ConsoleOutputHelper.WriteTaskTableAssociatedWithWorker(_context.User, _context.TaskStorage);
         }
     }
 }

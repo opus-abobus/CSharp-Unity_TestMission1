@@ -10,6 +10,7 @@ namespace ProjectManagement.Menu.Operations
         public CreateTaskOperation(SessionContext context)
         {
             _context = context;
+            _taskManagementService = _context.GetService<ITaskManagementService>();
         }
 
         void IMenuOperation.Execute(out ExecutionResult result)
@@ -19,24 +20,21 @@ namespace ProjectManagement.Menu.Operations
             Console.Write("Введите название задачи: ");
             enteredTitle = Console.ReadLine();
 
-            if (!_taskManagementService.Validate(enteredTitle))
-            {
-                //Console.Clear();
-                //Console.WriteLine("Указанное наименование задачи недопустимо");
+            Console.Write("Укажите описание задачи: ");
+            enteredDescription = Console.ReadLine();
 
+            _taskManagementService.CreateTask(enteredTitle, _context.Project.Id, _context.TaskStorage, out CreateTaskResult createResult, enteredDescription);
+            
+            if (!createResult.Successful)
+            {
                 result = new ExecutionResult()
                 {
                     succesful = false,
-                    message = "Указанное наименование задачи недопустимо"
+                    message = createResult.Message
                 };
 
                 return;
             }
-
-            Console.Write("Укажите описание задачи: ");
-            enteredDescription = Console.ReadLine();
-
-            _taskManagementService.CreateTask(enteredTitle, _context.Project.Id, _context.TaskStorage, enteredDescription);
 
             result = new ExecutionResult()
             {

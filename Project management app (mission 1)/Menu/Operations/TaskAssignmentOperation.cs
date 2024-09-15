@@ -68,8 +68,6 @@ namespace ProjectManagement.Menu.Operations
             {
                 succesful = true
             };
-
-            //Console.Clear();
         }
     }
 }

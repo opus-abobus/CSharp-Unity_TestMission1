@@ -6,7 +6,7 @@ using Task = ProjectManagement.Entities.Task;
 
 namespace ProjectManagement
 {
-    public class HelperFunctions
+    public class ConsoleOutputHelper
     {
         public enum AnchorPosition { TopCenter }
         public static void WriteToConsoleAnchored(string text, AnchorPosition anchorPosition = AnchorPosition.TopCenter)

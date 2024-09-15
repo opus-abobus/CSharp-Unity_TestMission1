@@ -16,7 +16,6 @@ namespace ProjectManagement.Services.UserServices
         {
             if (storage.GetUser(login) != null)
             {
-                Console.WriteLine("Пользователь с логином \"" + login + "\" уже существует.");
                 return;
             }
 
@@ -28,8 +27,6 @@ namespace ProjectManagement.Services.UserServices
             };
 
             storage.SaveData(user);
-
-            Console.WriteLine("Регистрация успешна.");
         }
 
         bool IRegisterService.IsRegistered(string login, UserStorage storage)

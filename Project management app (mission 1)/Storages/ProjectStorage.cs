@@ -18,11 +18,6 @@ namespace ProjectManagement.Storages
             return null;
         }
 
-        public void CreateNew(Project project)
-        {
-
-        }
-
         public int GetProjectsCount()
         {
             return GetData().Count;
@@ -48,6 +43,11 @@ namespace ProjectManagement.Storages
             }
 
             return tasksData.Count;
+        }
+
+        public List<Project> GetProjects()
+        {
+            return GetData();
         }
     }
 }

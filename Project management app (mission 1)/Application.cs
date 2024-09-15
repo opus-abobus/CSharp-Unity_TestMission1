@@ -3,7 +3,6 @@ using ProjectManagement.Entities;
 using ProjectManagement.Entities.User;
 using ProjectManagement.Menu;
 using ProjectManagement.Menu.MenuBuilder;
-using ProjectManagement.Menu.Operations;
 using ProjectManagement.SaveSystem;
 using ProjectManagement.Services;
 using ProjectManagement.Services.UserServices;
@@ -11,36 +10,23 @@ using ProjectManagement.Storages;
 
 namespace ProjectManagement
 {
-    public class SessionContext
+    public class SessionContext(IServiceProvider serviceProvider, UserStorage userStorage, ProjectStorage projectStorage, TaskStorage taskStorage, TaskLogStorage taskLogStorage)
     {
         public User? User { get; set; }
         public Project? Project { get; set; }
 
-        public UserStorage UserStorage { get; private set; }
-        public ProjectStorage ProjectStorage { get; private set; }
-        public TaskStorage TaskStorage { get; private set; }
-        public TaskLogStorage TaskLogStorage { get; private set; }
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
 
-        private readonly IServiceProvider _serviceProvider;
+        public UserStorage UserStorage { get; private set; } = userStorage;
+        public ProjectStorage ProjectStorage { get; private set; } = projectStorage;
+        public TaskStorage TaskStorage { get; private set; } = taskStorage;
+        public TaskLogStorage TaskLogStorage { get; private set; } = taskLogStorage;
 
         public T GetService<T>()
         {
             var service = _serviceProvider.GetService(typeof(T));
-            if (service == null)
-            {
-                throw new InvalidOperationException("Не удалось получить экземпляр сервиса");
-            }
 
-            return (T) service;
-        }
-
-        public SessionContext(IServiceProvider serviceProvider, UserStorage userStorage, ProjectStorage projectStorage, TaskStorage taskStorage, TaskLogStorage taskLogStorage)
-        {
-            _serviceProvider = serviceProvider;
-            UserStorage = userStorage;
-            ProjectStorage = projectStorage;
-            TaskStorage = taskStorage;
-            TaskLogStorage = taskLogStorage;
+            return service == null ? throw new InvalidOperationException("Не удалось получить экземпляр сервиса") : (T) service;
         }
     }
 
@@ -51,10 +37,10 @@ namespace ProjectManagement
         private const string _projectsDataFile = "projects.xml";
         private const string _logsDataFile = "log.txt";
 
-        private IRegisterService _registerService;
-        private IAuthenticateService _authenticateService;
-        private ITaskManagementService _taskManagementService;
-        private ITaskLogService _taskLogService;
+        private readonly IRegisterService? _registerService;
+        private readonly IAuthenticateService? _authenticateService;
+        private readonly ITaskManagementService? _taskManagementService;
+        private readonly ITaskLogService? _taskLogService;
 
         private readonly SessionContext _sessionContext;
 
@@ -64,6 +50,8 @@ namespace ProjectManagement
             _authenticateService = serviceProvider.GetService<IAuthenticateService>();
             _taskManagementService = serviceProvider.GetService<ITaskManagementService>();
             _taskLogService = serviceProvider.GetService<ITaskLogService>();
+
+            ValidateServices();
 
             ISaveSystem saveSystem = new XMLSaveSystemEncrypted();
             //ISaveSystem saveSystem = new XMLSaveSystem();
@@ -80,36 +68,25 @@ namespace ProjectManagement
 
             AddManagerUser();
             AddProjectExample();
-        }
+        } 
 
         public void Run()
         {
             var builder = new MenuBuilder(_sessionContext);
+            var startMenu = builder.BuildUserMenu();
+            var menuHandler = new MenuHandler(startMenu);
 
-            var menu = builder.BuildUserMenu();
-
-            var menuHandler = new MenuHandler();
-
-            IMenuOperation? operation;
-            int choice;
             while (true)
             {
-                menuHandler.HandleMenu(menu);
+                menuHandler.HandleMenu();
+            }
+        }
 
-                choice = menuHandler.ChooseOperation();
-
-                operation = menuHandler.GetOperation(choice);
-                if (operation == null)
-                {
-                    continue;
-                }
-
-                operation.Execute(out ExecutionResult result);
-                if (!result.succesful)
-                {
-                    Console.WriteLine("Операция выполнена безуспешно: " + result.message);
-                    continue;
-                }
+        private void ValidateServices()
+        {
+            if (_registerService == null || _authenticateService == null || _taskManagementService == null || _taskLogService == null)
+            {
+                throw new ArgumentNullException("Обнаружен неопределенный сервис");
             }
         }
 
@@ -120,7 +97,7 @@ namespace ProjectManagement
                 _sessionContext.UserStorage.SaveData(new User("manager", "123", UserRole.Manager));
             }
 
-            HelperFunctions.WriteToConsoleAnchored("Используйте логин/пароль для входа в качестве управляющего: "
+            ConsoleOutputHelper.WriteToConsoleAnchored("Используйте логин/пароль для входа в качестве управляющего: "
                 + "manager/123");
         }
 
@@ -131,7 +108,7 @@ namespace ProjectManagement
                 _sessionContext.ProjectStorage.SaveData(new Project("Разработка системы управления проектами"));
             }
 
-            HelperFunctions.WriteToConsoleAnchored("В систему добавлен первый проект. Если Вы управляющий, " +
+            ConsoleOutputHelper.WriteToConsoleAnchored("В систему добавлен первый проект. Если Вы управляющий, " +
                 "Вы можете указать его в качестве текущего после входа в систему.");
         }
     }

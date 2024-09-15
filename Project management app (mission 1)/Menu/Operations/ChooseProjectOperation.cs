@@ -17,36 +17,14 @@ namespace ProjectManagement.Menu.Operations
 
         void IMenuOperation.Execute(out ExecutionResult result)
         {
-            //---
-            var data = _storage.GetData();
-
-            if (data.Count == 0)
-            {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Данных по проектам не обнаружено"
-                };
-
-                //throw new InvalidOperationException("Данных по проектам не обнаружено");
-            }
-
-            Console.Clear();
-
-            HelperFunctions.WriteToConsoleAnchored("Выбор рабочего проекта");
-
-            ConsoleTable.From<Project>(data).Write(Format.Minimal);
-
-            //---
+            ConsoleTable.From<Project>(_context.ProjectStorage.GetProjects()).Write(Format.Minimal);
 
             Console.Write("Введите id проекта: ");
 
-            bool parseRes = int.TryParse(Console.ReadLine(), out int value);
+            bool parseRes = int.TryParse(Console.ReadLine(), out int projectId);
 
             if (!parseRes)
             {
-                //Console.WriteLine("Вы указали не число");
-
                 result = new ExecutionResult()
                 {
                     succesful = false,
@@ -56,12 +34,10 @@ namespace ProjectManagement.Menu.Operations
                 return;
             }
 
-            Project? existingProject = data.FirstOrDefault(x => x.Id == value);
+            Project? existingProject = _storage.GetProject(projectId);
 
             if (existingProject == null)
             {
-                //Console.WriteLine("Проекта с указанным Id не существует");
-
                 result = new ExecutionResult()
                 {
                     succesful = false,
@@ -71,14 +47,12 @@ namespace ProjectManagement.Menu.Operations
                 return;
             }
 
-            _data.Project = existingProject;
+            _context.Project = existingProject;
 
             result = new ExecutionResult()
             {
                 succesful = true
             };
-
-            //Console.Clear();
         }
     }
 }

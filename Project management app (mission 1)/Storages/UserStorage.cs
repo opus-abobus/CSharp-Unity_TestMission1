@@ -7,8 +7,10 @@ namespace ProjectManagement.Storages
     {
         public UserStorage(string fileName, ISaveSystem saveSystem) : base(fileName, saveSystem) { }
 
-        public User? GetUser(string login)
+        public User? GetUser(string? login)
         {
+            if (string.IsNullOrEmpty(login)) return null;
+
             return GetData(user => user.Login == login).FirstOrDefault();
         }
 

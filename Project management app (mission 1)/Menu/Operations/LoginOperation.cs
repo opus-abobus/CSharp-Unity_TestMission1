@@ -22,24 +22,23 @@ namespace ProjectManagement.Menu.Operations
             Console.Write("Введите пароль: ");
             string? enteredPassword = Console.ReadLine();
 
-            _context.User = _context.GetService<IAuthenticateService>().Authenticate(enteredLogin, enteredPassword, _context.UserStorage, out bool authResult);
+            _context.User = _context.GetService<IAuthenticateService>().Authenticate(enteredLogin, enteredPassword, _context.UserStorage, 
+                out AuthenticationResult authResult);
 
-            if (!authResult)
+            result = new ExecutionResult() { message = authResult.message };
+
+            if (!authResult.sucessful)
             {
                 //Console.WriteLine("\nВозврат в главное меню...");
                 //Thread.Sleep(1500);
                 //Console.Clear();
 
-                result = new ExecutionResult()
-                {
-                    succesful = false
-                };
+                result.succesful = false;
+
+                return;
             }
 
-            result = new ExecutionResult()
-            {
-                succesful = true
-            };
+            result.succesful = true;
 
             //Console.Clear();
         }

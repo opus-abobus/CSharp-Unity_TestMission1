@@ -6,7 +6,7 @@
         public int Id { get; set; }
         public int ProjectId { get; set; }
         public string Title { get; set; }
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public TaskStatus Status { get; set; } = TaskStatus.ToDo;
         public enum TaskStatus
@@ -19,7 +19,7 @@
         public User.User? AssignedUser { get; set; }
 
         public Task() {}
-        public Task(int id, int projectId, string title, string description)
+        public Task(int id, int projectId, string title, string? description)
         {
             Id = id;
             ProjectId = projectId;

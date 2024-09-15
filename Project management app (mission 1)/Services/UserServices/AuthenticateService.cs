@@ -5,33 +5,56 @@ namespace ProjectManagement.Services.UserServices
 {
     public interface IAuthenticateService
     {
-        User? Authenticate(string login, string password, UserStorage storage, out bool result);
+        User? Authenticate(string login, string password, UserStorage storage, out AuthenticationResult result);
     }
 
     public class AuthenticateService : IAuthenticateService
     {
-        User? IAuthenticateService.Authenticate(string login, string password, UserStorage storage, out bool result)
+        User? IAuthenticateService.Authenticate(string? login, string? password, UserStorage storage, out AuthenticationResult result)
         {
-            result = false;
+            User? existingUser = storage.GetUser(login);
 
-            User? userData = storage.GetUser(login);
-
-            if (userData == null)
+            if (existingUser == null)
             {
-                Console.WriteLine("Неверный логин.");
+                //Console.WriteLine("Неверный логин.");
+
+                result = new AuthenticationResult()
+                {
+                    sucessful = false,
+                    message = "Неверный логин"
+                };
+
                 return null;
             }
 
-            if (password != userData.Password)
+            if (password != existingUser.Password)
             {
-                Console.WriteLine("Неверный пароль.");
+                //Console.WriteLine("Неверный пароль.");
+
+                result = new AuthenticationResult()
+                {
+                    sucessful = false,
+                    message = "Неверный пароль"
+                };
+
                 return null;
             }
 
-            Console.WriteLine("Авторизация прошла успешно.");
+            //Console.WriteLine("Авторизация прошла успешно.");
 
-            result = true;
-            return userData;
+            result = new AuthenticationResult()
+            {
+                sucessful = true,
+                message = "Авторизация выполнена успешно"
+            };
+
+            return existingUser;
         }
+    }
+
+    public struct AuthenticationResult 
+    {
+        public bool sucessful;
+        public string? message;
     }
 }

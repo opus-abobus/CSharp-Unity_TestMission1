@@ -18,8 +18,6 @@ namespace ProjectManagement.Menu.Operations
 
         void IMenuOperation.Execute(out ExecutionResult result)
         {
-            //Console.Clear();
-
             string? enteredLogin, enteredPassword;
 
             Console.Write("Введите логин: ");
@@ -27,28 +25,24 @@ namespace ProjectManagement.Menu.Operations
 
             if (!_registerService.Validate(enteredLogin))
             {
-                //Console.WriteLine("Указанный логин не является допустимым\nВозврат назад...");
-                //Thread.Sleep(1500);
-                //Console.Clear();
-
                 result = new ExecutionResult()
                 {
                     succesful = false,
                     message = "Указанный логин не является допустимым"
                 };
+
+                return;
             }
 
             if (_registerService.IsRegistered(enteredLogin, _storage))
             {
-                //Console.WriteLine("Указанный логин уже зарегистрирован в системе.\nВозврат назад...");
-                //Thread.Sleep(1500);
-                //Console.Clear();
-
                 result = new ExecutionResult()
                 {
                     succesful = false,
                     message = "Указанный логин уже зарегистрирован в системе"
                 };
+
+                return;
             }
 
             Console.Write("Введите пароль: ");
@@ -56,15 +50,13 @@ namespace ProjectManagement.Menu.Operations
 
             if (!_registerService.Validate(enteredPassword))
             {
-                //Console.WriteLine("Указанный пароль не является допустимым.\nВозврат назад...");
-                //Thread.Sleep(1500);
-                //Console.Clear();
-
                 result = new ExecutionResult()
                 {
                     succesful = false,
                     message = "Указанный пароль не является допустимым"
                 };
+
+                return;
             }
 
             _registerService.Register(enteredLogin, enteredPassword, _storage);
