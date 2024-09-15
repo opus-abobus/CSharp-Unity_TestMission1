@@ -1,27 +1,27 @@
-﻿using ProjectManagement.Entities;
+﻿using ProjectManagement.Storages;
 using Task = ProjectManagement.Entities.Task;
 
 namespace ProjectManagement.Services.UserServices
 {
     public interface ITaskManagementService
     {
-        void CreateTask(string title, Project project, Storage<Task> storage, string description = "");
+        void CreateTask(string title, int projectId, TaskStorage storage, string description = "");
         bool Validate(string taskTitle);
     }
 
     public class TaskManagementService : ITaskManagementService
     {
-        void ITaskManagementService.CreateTask(string title, Project project, Storage<Task> storage, string description = "")
+        void ITaskManagementService.CreateTask(string title, int projectId, TaskStorage storage, string description)
         {
-            var lastTaskInProject = storage.GetData().LastOrDefault(x => project.Id == x.ProjectId);
+            var lastTaskInProject = storage.GetLastTask(projectId);
+
             int taskId = 0;
             if (lastTaskInProject != null)
             {
                 taskId = lastTaskInProject.Id + 1;
             }
 
-            Task task = new Task(taskId, project.Id, title, description);
-            storage.SaveData(task);
+            storage.SaveData(new Task(taskId, projectId, title, description));
         }
 
         bool ITaskManagementService.Validate(string taskTitle)

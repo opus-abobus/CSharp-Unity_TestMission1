@@ -1,6 +1,7 @@
 ﻿using ConsoleTables;
 using ProjectManagement.Entities;
 using ProjectManagement.Entities.User;
+using ProjectManagement.Storages;
 using Task = ProjectManagement.Entities.Task;
 
 namespace ProjectManagement
@@ -22,11 +23,11 @@ namespace ProjectManagement
             Console.WriteLine(text);
         }
 
-        public static void WriteWorkersLoginTable(Storage<User> storage)
+        public static void WriteWorkersLoginTable(UserStorage storage)
         {
             WriteToConsoleAnchored("Список логинов работников:");
 
-            var logins = GetUsersLogins(storage.GetData(x => x.Role == UserRole.Employee));
+            var logins = GetUsersLogins(storage.GetEmployees());
 
             var table = new ConsoleTable("Login");
 
@@ -38,11 +39,11 @@ namespace ProjectManagement
             table.Write();
         }
 
-        public static void WriteTaskTableWithWorkers(Project project, Storage<Task> storage)
+        public static void WriteTaskTableWithWorkers(Project project, TaskStorage storage)
         {
             WriteToConsoleAnchored("Список задач:");
 
-            var taskCollection = project.GetTasks(storage);
+            var taskCollection = storage.GetTasks(project.Id);
             var tasksWithAssignedUsers = new List<Tuple<int, string, string, Task.TaskStatus, string, string>>(taskCollection.Count);
             foreach (Task task in taskCollection)
             {
@@ -63,14 +64,14 @@ namespace ProjectManagement
             table.Write();
         }
 
-        public static void WriteTaskTableAssociatedWithWorker(User? currentUser, Storage<Task> storage)
+        public static void WriteTaskTableAssociatedWithWorker(User? currentUser, TaskStorage storage)
         {
             if (currentUser == null || currentUser.Role != UserRole.Employee)
             {
                 throw new InvalidOperationException("Не задан текущий пользователь или его роль не рядовой сотрудник");
             }
 
-            var taskCollection = User.GetAssignedTasks(currentUser, storage);
+            var taskCollection = storage.GetAssignedTasks(currentUser);
             if (taskCollection == null)
             {
                 return;

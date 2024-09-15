@@ -1,23 +1,22 @@
 ﻿using ProjectManagement.SaveSystem;
 
-namespace ProjectManagement
+namespace ProjectManagement.Storages
 {
     public class Storage<T>
     {
-        public string FileName { get; private set; }
-
+        private readonly string _fileName;
         private readonly ISaveSystem _saveSystem;
 
-        private List<T> _data = new List<T>();
+        private List<T> _data = new();
 
-        private List<T> LoadData()
+        protected List<T> LoadData()
         {
-            if (!File.Exists(FileName))
+            if (!File.Exists(_fileName))
             {
                 return new List<T>();
             }
 
-            return _saveSystem.Load<List<T>>(FileName);
+            return _saveSystem.Load<List<T>>(_fileName);
         }
 
         public void SaveData(T data, bool allowDuplicate = false)
@@ -32,10 +31,10 @@ namespace ProjectManagement
                     _data.Add(data);
             }
 
-            _saveSystem.Save<List<T>>(_data, FileName);
+            _saveSystem.Save<List<T>>(_data, _fileName);
         }
 
-        public List<T> GetData(Predicate<T>? predicate = null) 
+        protected List<T> GetData(Predicate<T>? predicate = null)
         {
             if (predicate == null)
             {
@@ -45,9 +44,9 @@ namespace ProjectManagement
             return _data.FindAll(predicate);
         }
 
-        public Storage(string fileName, ISaveSystem saveSystem)
+        protected Storage(string fileName, ISaveSystem saveSystem)
         {
-            FileName = fileName;
+            _fileName = fileName;
             _saveSystem = saveSystem;
 
             _data = LoadData();

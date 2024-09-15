@@ -27,17 +27,6 @@
             Description = description;
         }
 
-        public static Task? GetTask(Storage<Task> storage, int id, int projectId)
-        {
-            var existingTask = storage.GetData().FirstOrDefault(x => x.Id == id && x.ProjectId == projectId);
-            if (existingTask != null)
-            {
-                return existingTask;
-            }
-
-            return null;
-        }
-
         public static TaskStatus Parse(string statusStr, out bool result)
         {
             statusStr = statusStr.ToLower();

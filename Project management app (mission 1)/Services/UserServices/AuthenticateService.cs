@@ -1,37 +1,36 @@
 ﻿using ProjectManagement.Entities.User;
+using ProjectManagement.Storages;
 
 namespace ProjectManagement.Services.UserServices
 {
     public interface IAuthenticateService
     {
-        User? Authenticate(string login, string password, Storage<User> userData, out bool result);
+        User? Authenticate(string login, string password, UserStorage storage, out bool result);
     }
 
     public class AuthenticateService : IAuthenticateService
     {
-        User? IAuthenticateService.Authenticate(string login, string password, Storage<User> storage, out bool result)
+        User? IAuthenticateService.Authenticate(string login, string password, UserStorage storage, out bool result)
         {
             result = false;
 
-            User? userData = User.GetUser(storage, login);
+            User? userData = storage.GetUser(login);
 
-            if (userData != null)
-            {
-                if (password == userData.Password)
-                {
-                    Console.WriteLine("Авторизация прошла успешно.");
-                    result = true;
-                }
-                else
-                {
-                    Console.WriteLine("Неверный пароль.");
-                }
-            }
-            else
+            if (userData == null)
             {
                 Console.WriteLine("Неверный логин.");
+                return null;
             }
 
+            if (password != userData.Password)
+            {
+                Console.WriteLine("Неверный пароль.");
+                return null;
+            }
+
+            Console.WriteLine("Авторизация прошла успешно.");
+
+            result = true;
             return userData;
         }
     }
