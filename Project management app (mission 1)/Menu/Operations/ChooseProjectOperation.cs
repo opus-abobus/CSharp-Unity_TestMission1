@@ -25,11 +25,7 @@ namespace ProjectManagement.Menu.Operations
 
             if (!parseRes)
             {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Вы указали не число"
-                };
+                result = new ExecutionResult(false, errorMessage: "Вы указали не число");
 
                 return;
             }
@@ -38,21 +34,14 @@ namespace ProjectManagement.Menu.Operations
 
             if (existingProject == null)
             {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Проекта с указанным Id не существует"
-                };
+                result = new ExecutionResult(false, errorMessage: "Проект с указанным Id не существует");
 
                 return;
             }
 
             _context.Project = existingProject;
 
-            result = new ExecutionResult()
-            {
-                succesful = true
-            };
+            result = new ExecutionResult(true, message: "Установлен проект [" + existingProject.Name + "] (id: " + existingProject.Id + ")");
         }
     }
 }

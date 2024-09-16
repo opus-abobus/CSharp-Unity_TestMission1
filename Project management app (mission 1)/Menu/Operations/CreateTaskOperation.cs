@@ -27,19 +27,12 @@ namespace ProjectManagement.Menu.Operations
             
             if (!createResult.Successful)
             {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = createResult.Message
-                };
+                result = new ExecutionResult(false, errorMessage: createResult.Message);
 
                 return;
             }
 
-            result = new ExecutionResult()
-            {
-                succesful = true
-            };
+            result = new ExecutionResult(true, message: "Создана задача [" + enteredTitle + "]");
         }
     }
 }

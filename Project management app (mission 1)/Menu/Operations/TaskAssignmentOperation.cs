@@ -24,11 +24,7 @@ namespace ProjectManagement.Menu.Operations
             var user = _userStorage.GetUser(enteredLogin);
             if (user == null || user.Role != UserRole.Employee)
             {
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Неверный логин"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Неверный логин");
 
                 return;
             }
@@ -40,11 +36,7 @@ namespace ProjectManagement.Menu.Operations
 
             if (!parseRes)
             {
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Вы указали не число"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Вы указали не число");
 
                 return;
             }
@@ -52,11 +44,7 @@ namespace ProjectManagement.Menu.Operations
             var task = _taskStorage.GetTask(taskId, _context.Project.Id);
             if (task == null)
             {
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Неверный id задачи"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Неверный id задачи");
 
                 return;
             }
@@ -64,10 +52,7 @@ namespace ProjectManagement.Menu.Operations
             task.AssignedUser = _userStorage.GetUser(enteredLogin);
             _taskStorage.SaveData(task);
 
-            execResult = new ExecutionResult()
-            {
-                succesful = true
-            };
+            execResult = new ExecutionResult(true, message: "Сотруднику [" + enteredLogin + "] была назначена задача [" + task.Title + "]");
         }
     }
 }

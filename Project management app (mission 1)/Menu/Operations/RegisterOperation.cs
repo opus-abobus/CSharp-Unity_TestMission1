@@ -25,22 +25,14 @@ namespace ProjectManagement.Menu.Operations
 
             if (!_registerService.Validate(enteredLogin))
             {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Указанный логин не является допустимым"
-                };
+                result = new ExecutionResult(false, errorMessage: "Указанный логин не является допустимым");
 
                 return;
             }
 
             if (_registerService.IsRegistered(enteredLogin, _storage))
             {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Указанный логин уже зарегистрирован в системе"
-                };
+                result = new ExecutionResult(false, errorMessage: "Указанный логин уже зарегистрирован в системе");
 
                 return;
             }
@@ -50,21 +42,14 @@ namespace ProjectManagement.Menu.Operations
 
             if (!_registerService.Validate(enteredPassword))
             {
-                result = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Указанный пароль не является допустимым"
-                };
+                result = new ExecutionResult(false, errorMessage: "Указанный пароль не является допустимым");
 
                 return;
             }
 
             _registerService.Register(enteredLogin, enteredPassword, _storage);
 
-            result = new ExecutionResult()
-            {
-                succesful = true
-            };
+            result = new ExecutionResult(true, message: "Успешная регистрация пользователя [" + enteredLogin + "]");
         }
     }
 }

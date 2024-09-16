@@ -25,14 +25,7 @@ namespace ProjectManagement.Menu.Operations
             bool parseRes = int.TryParse(enteredProjectId, out int projectId);
             if (!parseRes)
             {
-                //Console.Clear();
-                //Console.WriteLine("Вы указали не число");
-
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Вы указали не число"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Вы указали не число");
 
                 return;
             }
@@ -40,14 +33,7 @@ namespace ProjectManagement.Menu.Operations
             selectedProject = _context.ProjectStorage.GetProject(projectId);
             if (selectedProject == null)
             {
-                //Console.Clear();
-                //Console.WriteLine("Неверный id проекта");
-
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Неверный id проекта"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Неверный id проекта");
 
                 return;
             }
@@ -58,28 +44,14 @@ namespace ProjectManagement.Menu.Operations
             parseRes = int.TryParse(enteredTaskId, out int taskId);
             if (!parseRes)
             {
-                //Console.WriteLine("Вы указали не число");
-                //Console.Clear();
-
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Вы указали не число"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Вы указали не число");
 
                 return;
             }
             selectedTask = _context.TaskStorage.GetTask(taskId, projectId);
             if (selectedTask == null)
             {
-                //Console.Clear();
-                //Console.WriteLine("Неверный id задачи");
-
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Неверный id задачи"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Неверный id задачи");
 
                 return;
             }
@@ -91,14 +63,7 @@ namespace ProjectManagement.Menu.Operations
 
             if (string.IsNullOrEmpty(enteredStatus) || !parseRes)
             {
-                //Console.Clear();
-                //Console.WriteLine("Неверно указан статус задачи");
-
-                execResult = new ExecutionResult()
-                {
-                    succesful = false,
-                    message = "Неверно указан статус задачи"
-                };
+                execResult = new ExecutionResult(false, errorMessage: "Неверно указан статус задачи");
 
                 return;
             }
@@ -112,10 +77,7 @@ namespace ProjectManagement.Menu.Operations
                 _context.GetService<ITaskLogService>().Log(log, _context.TaskLogStorage);
             }
 
-            execResult = new ExecutionResult()
-            {
-                succesful = true
-            };
+            execResult = new ExecutionResult(true, message: "Статус задачи [" + selectedTask.Title + "] сменен на [" + newStatus + "]");
         }
     }
 }

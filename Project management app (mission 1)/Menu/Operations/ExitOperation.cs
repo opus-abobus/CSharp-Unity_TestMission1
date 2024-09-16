@@ -6,10 +6,7 @@
         {
             Environment.Exit(0);
 
-            result = new ExecutionResult()
-            {
-                succesful = true
-            };
+            result = new ExecutionResult(true);
         }
     }
 }

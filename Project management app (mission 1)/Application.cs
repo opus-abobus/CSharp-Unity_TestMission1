@@ -61,7 +61,7 @@ namespace ProjectManagement
                 new UserStorage(_usersDataFile, saveSystem),
                 new ProjectStorage(_projectsDataFile, saveSystem),
                 new TaskStorage(_tasksDataFile, saveSystem),
-                new TaskLogStorage(_logsDataFile, saveSystem)
+                new TaskLogStorage(_logsDataFile, new XMLSaveSystem())
                 );
 
             new PrivilegeManager().SetupDefaultPrivilegesForAllRoles();
@@ -103,13 +103,12 @@ namespace ProjectManagement
 
         private void AddProjectExample()
         {
-            if (_sessionContext.ProjectStorage.GetProjectsCount() == 0)
-            {
-                _sessionContext.ProjectStorage.SaveData(new Project("Разработка системы управления проектами"));
-            }
+            if (_sessionContext.ProjectStorage.GetProjectsCount() != 0) return;
+
+            _sessionContext.ProjectStorage.SaveData(new Project("Разработка системы управления проектами"));
 
             ConsoleOutputHelper.WriteToConsoleAnchored("В систему добавлен первый проект. Если Вы управляющий, " +
-                "Вы можете указать его в качестве текущего после входа в систему.");
+            "Вы можете указать его в качестве текущего после входа в систему.");
         }
     }
 }

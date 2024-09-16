@@ -65,13 +65,14 @@ namespace ProjectManagement.Menu
         {
             ConstructOptions();
 
-            //var clearOptions = _currentMenuItem.ClearOptions;
+            var clearOptions = _currentMenuItem.ClearOptions;
 
             PrintMenuInfo();
 
             _currentMenuItem.StartAction?.Invoke();
 
             PrintLogMessage();
+            _logMessage = null;
 
             PrintOptions();
             
@@ -80,25 +81,35 @@ namespace ProjectManagement.Menu
             if (chosenItem == null)
             {
                 _logMessage = "Ошибка ввода. Укажите допустимый номер операции.";
+
+                if (clearOptions.Contains(ConsoleClearOptions.AfterInvalidChoice)) Console.Clear();
                 return;
             }
 
+            clearOptions = chosenItem.ClearOptions;
+            if (clearOptions.Contains(ConsoleClearOptions.BeforeExecution)) Console.Clear();
+
             if (chosenItem.Command != null)
             {
-                // print item info before that cmd
                 chosenItem.Command.Execute(out ExecutionResult execResult);
 
-                if (!execResult.succesful)
+                if (!execResult.Succesful)
                 {
-                    _logMessage = "Операция выполнена безуспешно. Причина: " + execResult.message;
+                    _logMessage = "Операция выполнена безуспешно. Причина: " + execResult.ErrorMessage;
+
+                    if (clearOptions.Contains(ConsoleClearOptions.FailedExecution)) Console.Clear();
 
                     return;
                 }
+
+                _logMessage = execResult.Message;
+
+                if (clearOptions.Contains(ConsoleClearOptions.SuccesfulExecution)) Console.Clear();
             }
 
-            chosenItem.PostAction?.Invoke();
+            if (clearOptions.Contains(ConsoleClearOptions.AfterAnyway)) Console.Clear();
 
-            _logMessage = null;
+            chosenItem.PostAction?.Invoke();
 
             if (!chosenItem.HasSubMenuItems() && chosenItem.NextMenu == null)
             {

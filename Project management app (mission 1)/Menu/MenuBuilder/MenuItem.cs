@@ -20,7 +20,7 @@ namespace ProjectManagement.Menu.MenuBuilder
         public Action? PostAction { get; private set; }
 
         public MenuItem? NextMenu { get; private set; }
-        public ClearConsoleOptions? ClearOptions { get; private set; }
+        public List<ConsoleClearOptions> ClearOptions { get; private set; } = new();
 
         private SessionContext _context;
 
@@ -154,7 +154,7 @@ namespace ProjectManagement.Menu.MenuBuilder
                 return this;
             }
 
-            public Builder WithClearOptions(ClearConsoleOptions clearOptions)
+            public Builder WithClearOptions(List<ConsoleClearOptions> clearOptions)
             {
                 _menuItem.ClearOptions = clearOptions;
                 return this;

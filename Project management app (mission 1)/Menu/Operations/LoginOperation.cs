@@ -12,10 +12,6 @@ namespace ProjectManagement.Menu.Operations
 
         void IMenuOperation.Execute(out ExecutionResult result)
         {
-            //Console.Clear();
-
-            //HelperFunctions.WriteToConsoleAnchored("Авторизация", HelperFunctions.AnchorPosition.TopCenter);
-
             Console.Write("Введите логин: ");
             string? enteredLogin = Console.ReadLine();
 
@@ -25,22 +21,14 @@ namespace ProjectManagement.Menu.Operations
             _context.User = _context.GetService<IAuthenticateService>().Authenticate(enteredLogin, enteredPassword, _context.UserStorage, 
                 out AuthenticationResult authResult);
 
-            result = new ExecutionResult() { message = authResult.message };
-
             if (!authResult.sucessful)
             {
-                //Console.WriteLine("\nВозврат в главное меню...");
-                //Thread.Sleep(1500);
-                //Console.Clear();
-
-                result.succesful = false;
+                result = new ExecutionResult(false, errorMessage: authResult.message);
 
                 return;
             }
 
-            result.succesful = true;
-
-            //Console.Clear();
+            result = new ExecutionResult(true);
         }
     }
 }

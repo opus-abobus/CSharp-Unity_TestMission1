@@ -14,10 +14,7 @@
             _context.User = null;
             _context.Project = null;
 
-            result = new ExecutionResult()
-            {
-                succesful = true
-            };
+            result = new ExecutionResult(true);
         }
     }
 }
